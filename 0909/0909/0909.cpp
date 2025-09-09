@@ -1,8 +1,8 @@
-﻿// 0902.cpp : 애플리케이션에 대한 진입점을 정의합니다.
+﻿// 0909.cpp : 애플리케이션에 대한 진입점을 정의합니다.
 //
 
 #include "framework.h"
-#include "0902.h"
+#include "0909.h"
 
 #define MAX_LOADSTRING 100
 
@@ -29,7 +29,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     // 전역 문자열을 초기화합니다.
     LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
-    LoadStringW(hInstance, IDC_MY0902, szWindowClass, MAX_LOADSTRING);
+    LoadStringW(hInstance, IDC_MY0909, szWindowClass, MAX_LOADSTRING);
     MyRegisterClass(hInstance);
 
     // 애플리케이션 초기화를 수행합니다:
@@ -38,7 +38,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         return FALSE;
     }
 
-    HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_MY0902));
+    HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_MY0909));
 
     MSG msg;
 
@@ -73,10 +73,10 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
     wcex.cbClsExtra     = 0;
     wcex.cbWndExtra     = 0;
     wcex.hInstance      = hInstance;
-    wcex.hIcon          = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_MY0902));
+    wcex.hIcon          = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_MY0909));
     wcex.hCursor        = LoadCursor(nullptr, IDC_ARROW);
     wcex.hbrBackground  = (HBRUSH)(COLOR_WINDOW+1);
-    wcex.lpszMenuName   = MAKEINTRESOURCEW(IDC_MY0902);
+    wcex.lpszMenuName   = MAKEINTRESOURCEW(IDC_MY0909);
     wcex.lpszClassName  = szWindowClass;
     wcex.hIconSm        = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
 
@@ -121,51 +121,70 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 //  WM_DESTROY  - 종료 메시지를 게시하고 반환합니다.
 //
 //
-/// *** 콜백 함수의 인수는 다음과 같이 고정되어 있다!
-/// HWND : 사용자가 입력한 윈도우 자체
-/// UINT : 사용자가 취한 액션 (키보드, 마우스 ... )
-/// WPARAM : 키보드 관련 정보가 전달
-/// LPARAM : 마우스 관련 정보가 전달
 
-int g_x = 10;
-int g_y = 10;
+/// 마우스의 이전 좌표를 보관하기 위한 전역 변수
+/// 전역 변수의 특징 : 항상 0으로 초기화 된다. Data 영역에 존재하기 때문에 어디서나 보인다.
+int g_x;        /// 마우스의 이전 x 좌표 값 보관
+int g_y;        /// 마우스의 이전 y 좌표 값 보관
+BOOL g_push;    /// 사용자가 마우스 왼쪽 버튼을 누르고 있는 상태인지 여부를 확인하기 위한 변수
+                /// 플래그 변수(실재로는 그냥 일반 변수) - 상태 정보를 갖는다.
 
-/// 콜백 함수(호출될때마다 다시 시작)
-/// ==> OS가 호출하는 일반적인 함수
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message)
     {
-    /// 사용자가 키보드의 키를 누르자마자 발생하는 메시지
-    case WM_KEYDOWN:
-        MessageBox(hWnd, L"키보드가 눌렸어요", L"야호", MB_OK);
+    case WM_RBUTTONDOWN:
+    {
+        /// 프로그래머가 WM_PAINT를 요청하는 코드
+        /// 무효화해줘~ 사각형을~
+        InvalidateRect(hWnd, NULL, FALSE);
+            /// bErase : FALSE - 현재 화면 상태를 지우지 않는다.
+            ///          TRUE - 현재 화면 상태를 지운다.
+    }
         break;
 
-    /// 마우스의 왼쪽 버튼을 누른 순간 발생하는 메시지
-    //case WM_LBUTTONDOWN:
-    /// 마우스가 이동할 때마다 발생하는 메시지
+    case WM_LBUTTONDOWN:
+    {
+        /// 선 그리기를 시작해야 한다!
+        g_push = TRUE;
+    }
+        break;
+    case WM_LBUTTONUP:
+    {
+        /// 선 그리기를 하지 않아야 한다!
+        g_push = FALSE;
+    }
+        break;
+
     case WM_MOUSEMOVE:
-        {
-            int x = LOWORD(lParam);     /// LOW WORD
-            int y = HIWORD(lParam);     /// HI WORD
-            //MessageBox(hWnd, L"마우스의 왼쪽 버튼이 눌렸어요", L"야호", MB_OK);
-            /// WM_PAINT 이외의 코드 영역에서 HDC를 얻을 수 있는 API
-            HDC hdc = GetDC(hWnd);      /// 이 윈도우(hWnd)의 HDC를 요청
+    {
+        if (FALSE == g_push)
+            break;
 
-            MoveToEx(hdc, g_x, g_y, NULL);    /// xx = 10, yy = 10
-            LineTo(hdc, x, y);
+        /// 마우스의 현재 좌표 값을 얻는다.
+        int x, y;
+        x = LOWORD(lParam);
+        y = HIWORD(lParam);
 
-            //Rectangle(hdc, g_x, g_y, x, y);
+        /// HDC 획득 : WM_PAINT 외부에서 획득
+        HDC hdc = GetDC(hWnd);
 
-            //g_x = g_x + 10;
-            //g_y += 10;
+        /// 자유선 그리기
+        MoveToEx(hdc, g_x, g_y, NULL);
+        LineTo(hdc, x, y);
 
-            ReleaseDC(hWnd, hdc);       /// 이 윈도우에서 사용한 HDC 더 이상 사용하지 않는다.
-        }
+        /// 선을 실제로 다 그린위치.
+        /// 이전 정보를 보관
+        g_x = x;
+        g_y = y;
+        /*
+        /// 사각형과 타원 그리기
+        Rectangle(hdc, 10, 10, x, y);
+        Ellipse(hdc, 10, 10, x, y);
+        */
+        ReleaseDC(hWnd, hdc);
+    }
         break;
-
-    /// WM_ ==> Window Message
-    /// 메뉴를 클릭했을때, 발생하는 메시지
     case WM_COMMAND:
         {
             int wmId = LOWORD(wParam);
@@ -183,46 +202,19 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             }
         }
         break;
-    /// 화면을 그린다.
-    /// 화면 상에 항상 언제나 표시되거나 그려져야 하는 내용을 그리는 코드가 있는 곳.
-    /// 호출되는 경우.
-    ///     1. 프로그램이 실행될 때 : OS가 자동으로 호출
-    ///     2. 창의 크기를 변경할 때
-    ///     3. 창을 최대화할 때
-    ///     4. 창을 최소화할 때
-    ///     5. 창을 원래 크기로 되돌릴 때
-    ///     6. 윈도우 화면 밖으로 창이 나갔을 때
     case WM_PAINT:
         {
             PAINTSTRUCT ps;
-            /// HDC : H(andle) DC(Device(모니터, 화면) Context(문맥, 정보체))
-            /// BeginPaint( ) API: hWnd (이 윈도우에) 추가 정보(ps)에 넣어달라.
-            ///     화면에 그리기를 시작하겠다를 OS에게 알리는 API
-            ///     WM_PAINT에서만 정상적으로 동작하는 API
             HDC hdc = BeginPaint(hWnd, &ps);
             // TODO: 여기에 hdc를 사용하는 그리기 코드를 추가합니다...
 
-            /// 1. 선 그리기 : 2개의 API
-            ///     - 시작점을 설정하기 위한 API : MoveToEx( )
-            ///     - 끝점을 설정하기 위한 API : LineTo( )
-            MoveToEx(hdc, 10, 10, NULL);
-            LineTo(hdc, 100, 100);
-
-            /// 2. 사각형 그리기 : 1개의 API
-            Rectangle(hdc, 10, 10, 100, 100);
-
             EndPaint(hWnd, &ps);
-            /// EndPaint( ) API : 화면 그리기를 종료하겠다를 OS에게 알리는 API
-            ///     WM_PAINT 이외의 코드 영역에서는 정상적으로 동작하지 않는다.
         }
         break;
-    /// 윈도우/프로그램을 종료
     case WM_DESTROY:
         PostQuitMessage(0);
         break;
-    /// 처리할 윈도우 메시지가 없는 경우.
     default:
-        /// Default Window Proc : 받았던 정보를 그대로 다시 OS에게 되돌리는 함수
         return DefWindowProc(hWnd, message, wParam, lParam);
     }
     return 0;
