@@ -133,11 +133,35 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message)
     {
+    /// 키보드 윈도우 메시지에 대한 처리
+    case WM_KEYDOWN:
+    {
+        switch (wParam)
+        {
+        case 78:           /// 상수
+            break;
+        case 'a':
+            break;
+        case 's':
+            break;
+        case 'd':
+            break;
+        }
+
+        WCHAR buf[32] = { 0, };
+        wsprintfW(buf, L"KEYDOWN: %d", wParam);
+        HDC hdc = GetDC(hWnd);
+        TextOut(hdc, 300, 10, buf, lstrlenW(buf));
+
+        ReleaseDC(hWnd, hdc);
+    }
+        break;
+
     case WM_RBUTTONDOWN:
     {
         /// 프로그래머가 WM_PAINT를 요청하는 코드
         /// 무효화해줘~ 사각형을~
-        InvalidateRect(hWnd, NULL, FALSE);
+        InvalidateRect(hWnd, NULL, TRUE);
             /// bErase : FALSE - 현재 화면 상태를 지우지 않는다.
             ///          TRUE - 현재 화면 상태를 지운다.
     }
@@ -166,12 +190,16 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         x = LOWORD(lParam);
         y = HIWORD(lParam);
 
+        WCHAR buf[32] = { 0, };
+        wsprintf(buf, L"x: %d - y: %d", x, y);
+
         /// HDC 획득 : WM_PAINT 외부에서 획득
         HDC hdc = GetDC(hWnd);
 
         /// 자유선 그리기
         MoveToEx(hdc, g_x, g_y, NULL);
         LineTo(hdc, x, y);
+        TextOut(hdc, 600, 10, buf, lstrlenW(buf));
 
         /// 선을 실제로 다 그린위치.
         /// 이전 정보를 보관
@@ -208,6 +236,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             HDC hdc = BeginPaint(hWnd, &ps);
             // TODO: 여기에 hdc를 사용하는 그리기 코드를 추가합니다...
 
+            WCHAR buf[16] = L"Hello World!";
+            /// HNeNlNlNoN N...
+            TextOut(hdc, 10, 10, buf, lstrlenW(buf));
             EndPaint(hWnd, &ps);
         }
         break;
