@@ -129,10 +129,45 @@ int g_x, g_y;
 /// 4 - 자유선 그리기
 int g_flag;
 
+/// 내 캐릭터의 좌표
+RECT g_me;
+
+
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message)
     {
+    /// 생성자와 동일한 역할을 수행하는 윈도우 메시지
+    /// 프로그램이 메모리에 적재되고 나서 OS가 딱 한번 호출해주는 윈도우 메시지
+    /// 변수의 초기화, 동적 메모리 할당 ...
+    case WM_CREATE:
+    {
+        //MessageBox(hWnd, L"WM_CREATE", L"난 지금 막 올라왔어", MB_OK);
+        g_me.left = 10;
+        g_me.top = 10;
+        g_me.right = 150;
+        g_me.bottom = 150;
+    }
+        break;
+
+    case WM_KEYDOWN:
+    {
+        /// 내 캐릭터의 좌표 값 계산
+        if (VK_LEFT == wParam)
+        {
+            g_me.left -= 10;
+            g_me.right -= 10;
+        }
+        else if (VK_RIGHT == wParam)
+        {
+            g_me.left += 10;
+            g_me.right += 10;
+        }
+        /// 변경된 좌표에 맞게 화면을 다시 그리도록 요청
+        InvalidateRect(hWnd, NULL, TRUE);
+    }
+        break;
+
     case WM_RBUTTONDOWN:
     {
         /// 그리기를 초기화
@@ -241,10 +276,16 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             PAINTSTRUCT ps;
             HDC hdc = BeginPaint(hWnd, &ps);
             // TODO: 여기에 hdc를 사용하는 그리기 코드를 추가합니다...
+
+            Rectangle(hdc, g_me.left, g_me.top, g_me.right, g_me.bottom);
+
             EndPaint(hWnd, &ps);
         }
         break;
+    /// 객체의 소멸자와 동일한 역할을 수행하는 윈도우 메시지
+    /// 프로그램이 메모리에서 해제되기 직전에 OS가 호출해주는 윈도우 메시지
     case WM_DESTROY:
+        //MessageBox(hWnd, L"WM_DESTROY", L"난 곧 내려질 것이야", MB_OK);
         PostQuitMessage(0);
         break;
     default:
