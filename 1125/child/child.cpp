@@ -1,8 +1,8 @@
-﻿// 1118.cpp : 애플리케이션에 대한 진입점을 정의합니다.
+﻿// child.cpp : 애플리케이션에 대한 진입점을 정의합니다.
 //
 
 #include "framework.h"
-#include "1118.h"
+#include "child.h"
 
 #define MAX_LOADSTRING 100
 
@@ -17,10 +17,6 @@ BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 
-/// 자식 프로세스의 PID 값 보관을 위한 변수 선언
-int g_pid = 0;
-
-
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
                      _In_ LPWSTR    lpCmdLine,
@@ -30,24 +26,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     UNREFERENCED_PARAMETER(lpCmdLine);
 
     // TODO: 여기에 코드를 입력합니다.
-    /// 인수로 전달된 PID 문자열을 숫자로 변환
-    g_pid = _wtoi(lpCmdLine);
-    /// C / atoi( ) - ASCII TO Integer
-    /// C++ wtoi( ) - Wchar TO Integer
-    /// 문자열로 구성되어 있는 숫자를 숫자 형태로 변환
-    /// 
-    /// Windows 계열 우리 예제 프로그램
-    /// g_pid == 0 이면 : 부모
-    /// g_pid != 0 이면 : 자식
-    /// 
-    /// UNIX/LINUX 계열
-    /// pid = fork( );
-    /// if( pid == 0 )  ==> 자식
-    /// if( pid != 0 )  ==> 부모
 
     // 전역 문자열을 초기화합니다.
     LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
-    LoadStringW(hInstance, IDC_MY1118, szWindowClass, MAX_LOADSTRING);
+    LoadStringW(hInstance, IDC_CHILD, szWindowClass, MAX_LOADSTRING);
     MyRegisterClass(hInstance);
 
     // 애플리케이션 초기화를 수행합니다:
@@ -56,7 +38,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         return FALSE;
     }
 
-    HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_MY1118));
+    HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_CHILD));
 
     MSG msg;
 
@@ -91,10 +73,10 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
     wcex.cbClsExtra     = 0;
     wcex.cbWndExtra     = 0;
     wcex.hInstance      = hInstance;
-    wcex.hIcon          = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_MY1118));
+    wcex.hIcon          = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_CHILD));
     wcex.hCursor        = LoadCursor(nullptr, IDC_ARROW);
     wcex.hbrBackground  = (HBRUSH)(COLOR_WINDOW+1);
-    wcex.lpszMenuName   = MAKEINTRESOURCEW(IDC_MY1118);
+    wcex.lpszMenuName   = MAKEINTRESOURCEW(IDC_CHILD);
     wcex.lpszClassName  = szWindowClass;
     wcex.hIconSm        = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
 
@@ -139,128 +121,24 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 //  WM_DESTROY  - 종료 메시지를 게시하고 반환합니다.
 //
 //
-
-
-/// 스레드 종료 변수 선언
-BOOL g_end_thread = FALSE;
-
-DWORD WINAPI thread_test(LPVOID p)
-{
-    while(g_end_thread == FALSE) {}
-
-    ExitThread(0);
-    return 0;
-}
-
-/*
-* OS가 프로세스를 실제로 생성한 다음에 획득 가능한 정보
-typedef struct _PROCESS_INFORMATION {
-    HANDLE hProcess;
-    HANDLE hThread;
-    DWORD dwProcessId;          /// PID
-    DWORD dwThreadId;           /// TID
-} PROCESS_INFORMATION, * PPROCESS_INFORMATION, * LPPROCESS_INFORMATION;
-*/
-
-/*
- * OS에게 프로세스를 생성할 때, 요청하는 정보
-typedef struct _STARTUPINFOA {
-    DWORD   cb;
-    LPSTR   lpReserved;
-    LPSTR   lpDesktop;
-    LPSTR   lpTitle;
-    DWORD   dwX;
-    DWORD   dwY;
-    DWORD   dwXSize;
-    DWORD   dwYSize;
-    DWORD   dwXCountChars;
-    DWORD   dwYCountChars;
-    DWORD   dwFillAttribute;
-    DWORD   dwFlags;
-    WORD    wShowWindow;
-    WORD    cbReserved2;
-    LPBYTE  lpReserved2;
-    HANDLE  hStdInput;
-    HANDLE  hStdOutput;
-    HANDLE  hStdError;
-} STARTUPINFOA, * LPSTARTUPINFOA;
-*/
-
-
-PROCESS_INFORMATION pi;
-
-
-
-
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message)
     {
     case WM_LBUTTONDOWN:
     {
-        if (g_pid != 0)
-            break;
-
-        /// 프로세스 생성을 위해 필요한 자료형 선언
-        STARTUPINFO si = { 0, };
-        
-        /// 프로세스 생성 API
-        wchar_t pName[32] = L"mspaint.exe";
-        CreateProcess(NULL, pName, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi);
-
-        memset(pName, 0x00, 32);
-        wsprintf(pName, L"1118.exe %d", pi.dwProcessId);
-        CreateProcess(NULL, pName, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi);
-
-        /*
-        DWORD tid = 0;
-        CreateThread(NULL, 0, thread_test, NULL, 0, &tid);
-
+        int x = LOWORD(lParam);
+        int y = HIWORD(lParam);
         HDC hdc = GetDC(hWnd);
 
-        WCHAR buf[32] = { 0, };
-        wsprintf(buf, L"thread id : %d", tid);
-        TextOut(hdc, 10, 10, buf, lstrlen(buf));
+        for (int i = 0; i < y; i++)
+        {
+            MoveToEx(hdc, x, 0, NULL);
+            LineTo(hdc, x, i);
+            Sleep(100);
+        }
 
         ReleaseDC(hWnd, hdc);
-        */
-    }
-        break;
-
-    case WM_RBUTTONDOWN:
-    {
-        if (g_pid == 0)
-            break;
-
-        /// 자식 프로세스가 알고 있는 정보 : PID only!
-        /// 프로세스 종료시 필요한 자료형 : HANDLE
-        /// PID로 프로세스의 HANDLE을 얻는 API
-
-        HANDLE h = OpenProcess(PROCESS_ALL_ACCESS, FALSE, g_pid);
-        TerminateProcess(h, 0);
-
-        /*
-        g_end_thread = TRUE;
-
-        /// 자식 스레드의 제어 : 일시 정지
-        SuspendThread(pi.hThread);
-        ///SuspendThread(GetCurrentThread());
-
-        */
-        /*
-        /// 자식 프로세스 강제 종료
-        TerminateProcess(pi.hProcess, 0);
-        Sleep(1000);
-        TerminateProcess(GetCurrentProcess(), 0);
-        */
-    }
-        break;
-
-    case WM_KEYDOWN:
-    {
-        /// 자식 스레드의 제어 : 일시 정지된 스레드의 재개
-        ResumeThread(pi.hThread);
-        ///ResumeThread(GetCurrentThread());
     }
         break;
     case WM_COMMAND:
@@ -285,15 +163,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             PAINTSTRUCT ps;
             HDC hdc = BeginPaint(hWnd, &ps);
             // TODO: 여기에 hdc를 사용하는 그리기 코드를 추가합니다...
-            WCHAR buf[128] = { 0, };
-            wsprintf(buf, L"My Process Info : PID[ %d ] TID[ %d ]",
-                GetCurrentProcessId(), GetCurrentThreadId());
-            TextOut(hdc, 10, 10, buf, lstrlen(buf));
-            /// 버퍼 초기화
-            memset(buf, 0x00, 128);
-            wsprintf(buf, L"Child Process Info : PID[ %d ] TID[ %d ]",
-                pi.dwProcessId, pi.dwThreadId);
-            TextOut(hdc, 10, 25, buf, lstrlen(buf));
             EndPaint(hWnd, &ps);
         }
         break;
